@@ -1,0 +1,19 @@
+#stage 1 builder
+FROM python:3.12-slim AS builder
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+#stage 2 final image
+
+FROM python:3.12-slim
+LABEL description="visit counter app" version="1"
+ENV APP_NAME="Docker Visit Counter" REDIS_HOST="cache" PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY app.py .
+RUN useradd --create-home appuser 
+EXPOSE 5000
+ENTRYPOINT ["gunicorn"]
+CMD ["--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
+
